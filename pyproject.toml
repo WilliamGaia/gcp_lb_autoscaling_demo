@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "autoscaling-demo"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{include = "autoscaling_demo"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+fastapi = "^0.100.1"
+uvicorn = "^0.23.2"
+google-cloud-compute = "^1.13.0"
+google-cloud-monitoring = "^2.15.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
