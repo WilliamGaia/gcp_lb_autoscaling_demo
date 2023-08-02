@@ -31,10 +31,7 @@ def check_and_scale_in(protect_vm:str = "",
                        max_surge:str="1"):
   avg_value = get_avg(backends)
   print("current avg_CPU_Util : ",avg_value)
-  if avg_value >=60:
-    print("Current AVG_CPU is: ",avg_value," No Need To Scale In")
-    return 200
-  instance_dict = cm.list_instances(ig_name=ig_name,zone=zone)
+  instance_dict = cm.list_instances(avg_value=avg_value,ig_name=ig_name,zone=zone)
   print("Listed Instance = ", instance_dict)
   if instance_dict == None:
     print("No Instance to delete")

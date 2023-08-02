@@ -9,7 +9,11 @@ class computeManager():
         self.ig_client = compute_v1.InstanceGroupsClient() # 
         self.project = project_info.project
 
-    def list_instances(self,ig_name,zone)-> dict:
+    def list_instances(self,avg_value,ig_name,zone)-> dict:
+        # Check if current IG CPU Util Higher than 60%, if so than stop process
+        if avg_value >=0.6:
+            print("Current AVG_CPU is: ",avg_value," No Need To Scale In")
+            return 200
         # Check if current Instance count met the minimum count of MIG, if so than stop process
         if self.check_if_met_minimum(ig_name,zone):
             return 
