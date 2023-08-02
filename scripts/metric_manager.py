@@ -7,7 +7,7 @@ class MetricManager():
         self.client = monitor.MetricServiceClient()
         self.project = f"projects/{project_info.project}"
 
-    def read_time_series(self,metric_path,backends,interval_secs=480) -> float:
+    def read_time_series(self,metric_path,ig_names,interval_secs=480) -> float:
         now = time.time()
         seconds = int(now)
         nanos = int((now - seconds) * 10**9)
@@ -17,30 +17,45 @@ class MetricManager():
                 "start_time": {"seconds": (seconds - interval_secs), "nanos": nanos},
             }
         )
+        aggregation = monitor.Aggregation(
+        {
+            "alignment_period": {"seconds": 60},  # 1 minutes
+            "per_series_aligner": monitor.Aggregation.Aligner.ALIGN_MEAN,
+            "cross_series_reducer": monitor.Aggregation.Reducer.REDUCE_MEAN,
+            "group_by_fields": ["metadata.system_labels.instance_group"],
+        }
+)
         results = self.client.list_time_series(
             request={
                 "name": self.project,
                 "filter": f'metric.type = "{metric_path}"',
                 "interval": interval,
                 "view": monitor.ListTimeSeriesRequest.TimeSeriesView.FULL,
+                "aggregation": aggregation,
             }
         )
 
         last_point_values = []
-        if backends != "":
-            backends = backends.split(",")
+        if ig_names != "":
+            ig_names = ig_names.split(",")
+        # print(results.time_series[0].points[0])
         for result in results:
-            bk_name = result.resource.labels["backend_service_name"]
-            bk_value = result.points[0].value.double_value
-            if backends == "": #Append all backends
-                print("bk name : ",bk_name)
-                print("bk value : ",bk_value)
-                last_point_values.append(bk_value)
+            # print(result.metadata.system_labels.fields["instance_group"].string_value)
+            # print(result.points[0].value.double_value)
+            # bk_name = result.resource.labels["backend_service_name"]
+            # bk_value = result.points[0].value.double_value
+            ig_name = result.metadata.system_labels.fields["instance_group"].string_value
+            ig_value = result.points[0].value.double_value
+
+            if ig_names == "": #Append all igs
+                print("ig name : ",ig_name)
+                print("ig value : ",ig_value)
+                last_point_values.append(ig_value)
             else:
-                if bk_name in backends: #Append only selected backends
-                    print("bk name : ",bk_name)
-                    print("bk value : ",bk_value)
-                    last_point_values.append(bk_value)
+                if ig_name in ig_names: #Append only selected igs
+                    print("ig name : ",ig_name)
+                    print("ig value : ",ig_value)
+                    last_point_values.append(ig_value)
 
         avg_value = sum(last_point_values)/len(last_point_values)
         return float(avg_value)
