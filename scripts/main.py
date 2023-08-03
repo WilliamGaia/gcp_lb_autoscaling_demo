@@ -57,4 +57,4 @@ def get_avg(ig_names,type="vm_cpu_avg"):
   )
 
 if __name__ == "__main__":
-  check_and_scale_in()
+  update_avg_metric(ig_names="demo-option2-mig,demo-option2-umig")

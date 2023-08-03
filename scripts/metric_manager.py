@@ -60,7 +60,7 @@ class MetricManager():
                 ig_name = result.metadata.system_labels.fields["instance_group"].string_value
             elif type == "autoscaler":
                 ig_name = result.resource.labels["instance_group_manager_name"]
-                
+
             ig_value = result.points[0].value.double_value
 
             if ig_names == "": #Append all igs
@@ -73,8 +73,8 @@ class MetricManager():
                     print("ig value : ",ig_value)
                     last_point_values.append(ig_value)
 
-
         avg_value = sum(last_point_values)/len(last_point_values)
+        print("AVG VALUE= ",avg_value)
         return float(avg_value)
 
     def write_time_series(self,metric_path,value:float):
@@ -91,4 +91,5 @@ class MetricManager():
         point = monitor.Point({"interval": interval, "value": {"double_value": value}})
         series.points = [point]
         self.client.create_time_series(name=self.project, time_series=[series])
+        print("Write VALUE= ",value," to Metric ",f"custom.googleapis.com/{metric_path}")
 
