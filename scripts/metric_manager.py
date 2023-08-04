@@ -1,6 +1,6 @@
 import time
 from google.cloud import monitoring_v3 as monitor
-from project_info import ProjectInfo
+from .project_info import ProjectInfo
 
 class MetricManager():
     def __init__(self,project_info: ProjectInfo):

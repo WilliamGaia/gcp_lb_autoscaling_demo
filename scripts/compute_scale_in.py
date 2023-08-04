@@ -1,6 +1,6 @@
 import time
 from google.cloud import compute_v1
-from project_info import ProjectInfo
+from .project_info import ProjectInfo
 from datetime import datetime
 
 class computeManager():
@@ -116,7 +116,7 @@ class computeManager():
                     return True
         return False
     
-    def switch_autoscaling_mode(self,ig_name,zone):
+    def switch_autoscaling_mode(self,trigger,ig_name,zone):
         request = compute_v1.GetAutoscalerRequest(
             autoscaler=ig_name,
             project=self.project,
@@ -127,6 +127,9 @@ class computeManager():
         current_mode = current_policy.mode
         
         if current_mode == "ON":
+            if trigger == "scale_out":
+                print("Current Mode is ON So Don't Need to Switch")
+                return
             response.autoscaling_policy.mode = "OFF"
             request = compute_v1.UpdateAutoscalerRequest(
                 autoscaler=ig_name,
@@ -160,6 +163,9 @@ class computeManager():
             response = self.ig_manager_client.delete_instances(request=request)
             print(response)
         elif current_mode == "OFF":
+            if trigger == "scale_in":
+                print("Current Mode is OFF So Don't Need to Switch")
+                return
             response.autoscaling_policy.mode = "ON"
             request = compute_v1.UpdateAutoscalerRequest(
                 autoscaler=ig_name,

@@ -1,8 +1,8 @@
 import os,time
 from fastapi import FastAPI 
-from project_info import ProjectInfo
-from metric_manager import MetricManager
-from compute_scale_in import computeManager
+from .project_info import ProjectInfo
+from .metric_manager import MetricManager
+from .compute_scale_in import computeManager
 
 project_id = os.getenv('PROJECT',default = "williamlab")
 interval_second = os.getenv('INTERVAL',default = 480)
@@ -41,9 +41,10 @@ def check_and_scale_in(protect_vm:str = "",
   return "Success Delete Instances"
 
 @app.get("/switch_autoscaler/")
-def switch_autoscaler(ig_name:str="demo-option2-mig",
+def switch_autoscaler(trigger:str,
+                      ig_name:str="demo-option2-mig",
                       zone:str="asia-east1-b"):
-  cm.switch_autoscaling_mode(ig_name=ig_name,zone=zone)
+  cm.switch_autoscaling_mode(trigger,ig_name=ig_name,zone=zone)
 
 def get_avg(ig_names,type="vm_cpu_avg"):
   if type == "vm_cpu_avg":
