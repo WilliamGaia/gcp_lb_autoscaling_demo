@@ -18,7 +18,7 @@ class computeManager():
             print("Current AVG_CPU is: ",avg_value," No Need To Scale In")
             return
         #Iif vm scale out than wait for the CPU Util update than check if is scaling up
-        time.sleep(60)
+        # time.sleep(60)
         autoscaler_value =get_avg(ig_name,type="autoscaler")
         print("AutoScaler CPU is: ",autoscaler_value)
         if autoscaler_value >=0.15:
@@ -36,6 +36,7 @@ class computeManager():
             zone=zone,
             instance_group=ig_name,
         )
+        
         results = self.ig_client.list_instances(request=request)
         for result in results:
             instance_name = result.instance.partition("instances/")[-1]
@@ -47,11 +48,15 @@ class computeManager():
             response=self.client.get(request=request)
             last_start_seconds = self.convert_date_time(response.last_start_timestamp)
             instances[instance_name] = last_start_seconds
+
         return instances
     
     def delete_last_created_vms(self,protect_vm,zone,instance_dict,max_surge,ig_name):
         sorted_names = sorted(instance_dict, key=instance_dict.get, reverse=True)
         vm_to_delete = sorted_names[:int(max_surge)]
+
+        now = time.time()
+        current_seconds = int(now)
 
         if protect_vm != "":
             protect_vm = protect_vm.split(",")
@@ -61,6 +66,9 @@ class computeManager():
             if vm in protect_vm:
                 print("Pass the protected VM:",vm)
                 continue
+            if current_seconds - instance_dict[vm] < 600:
+                print("Still in Scale out process, stop delete process")
+                return
             request = compute_v1.DeleteInstancesInstanceGroupManagerRequest(
                 instance_group_managers_delete_instances_request_resource=
                 compute_v1.InstanceGroupManagersDeleteInstancesRequest(instances=['zones/{}/instances/{}'.format(zone,vm)]),
@@ -108,6 +116,60 @@ class computeManager():
                     return True
         return False
     
+    def switch_autoscaling_mode(self,ig_name,zone):
+        request = compute_v1.GetAutoscalerRequest(
+            autoscaler=ig_name,
+            project=self.project,
+            zone=zone,
+        )
+        response = self.auto_scaler_client.get(request=request)
+        current_policy = response.autoscaling_policy
+        current_mode = current_policy.mode
+        
+        if current_mode == "ON":
+            response.autoscaling_policy.mode = "OFF"
+            request = compute_v1.UpdateAutoscalerRequest(
+                autoscaler=ig_name,
+                autoscaler_resource=response,
+                project=self.project,
+                zone=zone,
+            )
+            response = self.auto_scaler_client.update(request=request)
+            print(response)
+
+            request = compute_v1.ListInstancesInstanceGroupsRequest(
+            project=self.project,
+            zone=zone,
+            instance_group=ig_name,
+            )
+            results = self.ig_client.list_instances(request=request)
+            instance_list = []
+            for result in results:
+                instance_name = 'zones/{}/instances/{}'.format(zone,result.instance.partition("instances/")[-1])
+                instance_list.append(instance_name)
+
+            request = compute_v1.DeleteInstancesInstanceGroupManagerRequest(
+                instance_group_managers_delete_instances_request_resource=
+                compute_v1.InstanceGroupManagersDeleteInstancesRequest(
+                instances=instance_list
+                ),
+                instance_group_manager=ig_name,
+                project=self.project,
+                zone=zone,
+            )
+            response = self.ig_manager_client.delete_instances(request=request)
+            print(response)
+        elif current_mode == "OFF":
+            response.autoscaling_policy.mode = "ON"
+            request = compute_v1.UpdateAutoscalerRequest(
+                autoscaler=ig_name,
+                autoscaler_resource=response,
+                project=self.project,
+                zone=zone,
+            )
+            response = self.auto_scaler_client.update(request=request)
+            print(response)
+
     def convert_date_time(self,time_string) -> int:
         dt = datetime.strptime(time_string,"%Y-%m-%dT%H:%M:%S.%f%z")
         return int(dt.timestamp())

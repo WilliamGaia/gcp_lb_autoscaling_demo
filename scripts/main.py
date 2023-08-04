@@ -40,6 +40,11 @@ def check_and_scale_in(protect_vm:str = "",
   cm.delete_last_created_vms(protect_vm=protect_vm,zone=zone,instance_dict=instance_dict,max_surge=max_surge,ig_name=ig_name)
   return "Success Delete Instances"
 
+@app.get("/switch_autoscaler/")
+def switch_autoscaler(ig_name:str="demo-option2-mig",
+                      zone:str="asia-east1-b"):
+  cm.switch_autoscaling_mode(ig_name=ig_name,zone=zone)
+
 def get_avg(ig_names,type="vm_cpu_avg"):
   if type == "vm_cpu_avg":
     return mm.read_time_series(
@@ -57,4 +62,6 @@ def get_avg(ig_names,type="vm_cpu_avg"):
   )
 
 if __name__ == "__main__":
-  update_avg_metric(ig_names="demo-option2-mig,demo-option2-umig")
+  # update_avg_metric(ig_names="demo-option2-mig,demo-option2-umig")
+  switch_autoscaler()
+  
