@@ -1,0 +1,51 @@
+New-EventLog -LogName Application -Source "myStartupScript"
+
+Write-EventLog -LogName "Application" -Source "myStartupScript" -EventID 3001 -Message "Start Startup script" 
+
+# Installing IIS
+Import-Module servermanager
+Install-WindowsFeature Web-Server -IncludeAllSubFeature
+
+Write-EventLog -LogName "Application" -Source "myStartupScript" -EventID 3001 -Message "IIS Service Started !!"
+# Ensure the directory exists
+if (-not (Test-Path("C:\inetpub\wwwroot"))) {New-Item "C:\inetpub\wwwroot" -Type Directory}
+
+# Write the expanded string out to the file, overwriting the file if it already exists.
+"<html><body><p>Windows startup script added directly.</p></body></html>" | Out-File -FilePath C:\inetpub\wwwroot\index.html -Encoding ascii -Force
+
+Write-EventLog -LogName "Application" -Source "myStartupScript" -EventID 3001 -Message "IIS Service change index.html~ !!"
+
+Write-EventLog -LogName "Application" -Source "myStartupScript" -EventID 3001 -Message "Start Configure IIS Ops-agent"
+
+$ErrorActionPreference = 'Stop'
+
+# Create a back up of the existing file so existing configurations are not lost.
+Copy-Item -Path 'C:\Program Files\Google\Cloud Operations\Ops Agent\config\config.yaml' -Destination 'C:\Program Files\Google\Cloud Operations\Ops Agent\config\config.yaml.bak'
+
+# Configure the Ops Agent.
+Add-Content 'C:\Program Files\Google\Cloud Operations\Ops Agent\config\config.yaml' "
+metrics:
+  receivers:
+    iis_v2:
+      type: iis
+      receiver_version: 2
+  service:
+    pipelines:
+      iispipeline:
+        receivers:
+        - iis_v2
+logging:
+  receivers:
+    iis_access:
+      type: iis_access
+  service:
+    pipelines:
+      iis:
+        receivers:
+        - iis_access
+"
+
+Stop-Service google-cloud-ops-agent -Force
+Start-Service google-cloud-ops-agent* 
+
+Write-EventLog -LogName "Application" -Source "myStartupScript" -EventID 3001 -Message "Configured IIS Ops-agent"
