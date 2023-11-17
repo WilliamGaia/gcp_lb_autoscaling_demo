@@ -1,11 +1,10 @@
 import time
 from google.cloud import monitoring_v3 as monitor
-from .project_info import ProjectInfo
 
 class MetricManager():
-    def __init__(self,project_info: ProjectInfo):
+    def __init__(self,project_info):
         self.client = monitor.MetricServiceClient()
-        self.project = f"projects/{project_info.project}"
+        self.project = f"projects/{project_info}"
 
     def read_time_series(self,metric_path,ig_names,interval_secs=480,type="vm_cpu_avg") -> float:
         now = time.time()
@@ -23,7 +22,7 @@ class MetricManager():
                 "alignment_period": {"seconds": 60},  # 1 minutes
                 "per_series_aligner": monitor.Aggregation.Aligner.ALIGN_MEAN,
                 "cross_series_reducer": monitor.Aggregation.Reducer.REDUCE_MEAN,
-                "group_by_fields": ["metadata.system_labels.instance_group"],
+                "group_by_fields": ["metadata.user_labels.\"autoscaling-monitoring\""],
             })
         elif type == "autoscaler":
             aggregation = monitor.Aggregation(

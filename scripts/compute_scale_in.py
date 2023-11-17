@@ -1,15 +1,14 @@
 import time
 from google.cloud import compute_v1
-from .project_info import ProjectInfo
 from datetime import datetime
 
 class computeManager():
-    def __init__(self,project_info: ProjectInfo):
+    def __init__(self,project_info):
         self.client = compute_v1.InstancesClient() # Get Instance Details
         self.auto_scaler_client = compute_v1.AutoscalersClient() # Get Autoscaling info like min_max
         self.ig_client = compute_v1.InstanceGroupsClient() # 
         self.ig_manager_client = compute_v1.InstanceGroupManagersClient()
-        self.project = project_info.project
+        self.project = project_info
 
     def list_instances(self,get_avg,ig_name,zone)-> dict:
         # Check if current IG CPU Util Higher than 15%, if so than stop process
