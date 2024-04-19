@@ -14,7 +14,11 @@ class GcpClient():
             project=self.project,
             zone=zone,
         )
-        response = self.auto_scaler_client.get(request=request)
+        try:
+            response = self.auto_scaler_client.get(request=request)
+        except Exception as e:
+            print(f"Failed to retrieve autoscaler info: {e}")
+            return 500
         return response
     
     def update_autoscaler(self,ig_name,zone,resource):
@@ -23,14 +27,23 @@ class GcpClient():
             autoscaler_resource=resource,
             project=self.project,
             zone=zone,)
-        self.auto_scaler_client.update(request=request)
-
+        try:
+            self.auto_scaler_client.update(request=request)
+        except Exception as e:
+            print(f"Failed to update autoscaler info: {e}")
+            return 500
+        
     def list_mig_instances(self,ig_name,zone):
         request = compute_v1.ListInstancesInstanceGroupsRequest(
                 project=self.project,
                 zone=zone,
                 instance_group=ig_name,)
-        results = self.ig_client.list_instances(request=request)
+        try:
+            results = self.ig_client.list_instances(request=request)
+        except Exception as e:
+            print(f"Failed to list mig instance: {e}")
+            return 500
+        
         instance_list = []
         for result in results:
             instance_name = 'zones/{}/instances/{}'.format(zone,result.instance.partition("instances/")[-1])
@@ -45,22 +58,34 @@ class GcpClient():
                 instance_group_manager=ig_name,
                 project=self.project,
                 zone=zone,)
-        self.ig_manager_client.delete_instances(request=request)
+        try:
+            self.ig_manager_client.delete_instances(request=request)
+        except Exception as e:
+            print(f"Failed to delete mig instance: {e}")
+            return 500
     
-    def update_mig_size(self,ig_name,zone,size):
+    def set_number_of_instances(self,ig_name,zone,size):
         request = compute_v1.ResizeInstanceGroupManagerRequest(
         instance_group_manager=ig_name,
         project=self.project,
         size=size,
         zone=zone,
         )
-        self.ig_manager_client.resize(request=request)
+        try:
+            self.ig_manager_client.resize(request=request)
+        except Exception as e:
+            print(f"Failed to set mig instance numbers: {e}")
+            return 500
 
     def check_instance_number(self,ig_name,zone)-> int:
         get_request = compute_v1.GetInstanceGroupManagerRequest(
             instance_group_manager=ig_name,
             project=self.project,
             zone=zone,)
-        response = self.ig_manager_client.get(request=get_request)
+        try:
+            response = self.ig_manager_client.get(request=get_request)
+        except Exception as e:
+            print(f"Failed to get mig instance numbers: {e}")
+            return 500
         return response.target_size
     
