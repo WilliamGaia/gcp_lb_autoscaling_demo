@@ -44,7 +44,6 @@ class GcpClient():
         except Exception as e:
             print(f"Failed to list mig instance: {e}")
             return 500
-        
         instance_list = []
         for result in results:
             instance_name = 'zones/{}/instances/{}'.format(zone,result.instance.partition("instances/")[-1])
@@ -91,15 +90,27 @@ class GcpClient():
         return response.target_size
     
     def get_alert_info(self, policy_id:str):
-        response = self.alert_client.get_alert_policy(name=self._get_policy_name(policy_id))
+        try:
+            response = self.alert_client.get_alert_policy(name=self._get_policy_name(policy_id))
+        except Exception as e:
+            print(f"Failed to get alert policy: {e}")
+            return 500
         return response
     
     def update_alert_policy(self, alert_policy:monitoring_v3.AlertPolicy):
-        response = self.alert_client.update_alert_policy(alert_policy=alert_policy)
+        try:
+            response = self.alert_client.update_alert_policy(alert_policy=alert_policy)
+        except Exception as e:
+            print(f"Failed to update alert policy: {e}")
+            return 500
         return response
     
     def get_alert_list(self):
-        response = self.alert_client.list_alert_policies(name=f"projects/{self.project}")
+        try:
+            response = self.alert_client.list_alert_policies(name=f"projects/{self.project}")
+        except Exception as e:
+            print(f"Failed to get alert policy list: {e}")
+            return 500
         return response
 
     def _get_policy_name(self,policy:str) -> str:

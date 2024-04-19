@@ -10,7 +10,6 @@ mig_zone = os.getenv('MIG_ZONE',"asia-east1-b")#"asia-east1-b"
 mig_min = os.getenv("MIG_MIN",1)
 mig_max = os.getenv("MIG_MAX",3)
 scale_in_alert_id = os.getenv("SCALE_IN_ALERT_ID","12249586910524468922")
-scale_out_alert_id = os.getenv("SCALE_OUT_ALERT_ID","16070270594798604896")
 
 app = FastAPI()
 client = GcpClient(project_info=project_id)
@@ -40,8 +39,8 @@ def switch_autoscaler_off():
 
 @app.post("/schedule_provision/")
 def schedule_provision(request: ProvisionRequest):
-  ig_name: str = request.ig_name
-  zone: str = request.zone
+  ig_name:str=mig_name
+  zone:str=mig_zone
   is_provision: bool = request.is_provision
   provision_count: int = request.instance_count
   return cm.switch_provision_mode(ig_name=ig_name,
@@ -49,4 +48,5 @@ def schedule_provision(request: ProvisionRequest):
                          is_provision=is_provision,
                          mig_min=mig_min,
                          mig_max=mig_max,
-                         provision_count=provision_count)
+                         provision_count=provision_count,
+                         scale_in_alert_id=scale_in_alert_id)
