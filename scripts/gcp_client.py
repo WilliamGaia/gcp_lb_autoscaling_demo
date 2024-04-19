@@ -1,4 +1,5 @@
 from google.cloud import compute_v1, monitoring_v3
+from google.protobuf import wrappers_pb2 as wrappers
 
 class GcpClient():
     def __init__(self,project_info:str):
@@ -88,4 +89,19 @@ class GcpClient():
             print(f"Failed to get mig instance numbers: {e}")
             return 500
         return response.target_size
+    
+    def get_alert_info(self, policy_id:str):
+        response = self.alert_client.get_alert_policy(name=self._get_policy_name(policy_id))
+        return response
+    
+    def update_alert_policy(self, alert_policy:monitoring_v3.AlertPolicy):
+        response = self.alert_client.update_alert_policy(alert_policy=alert_policy)
+        return response
+    
+    def get_alert_list(self):
+        response = self.alert_client.list_alert_policies(name=f"projects/{self.project}")
+        return response
+
+    def _get_policy_name(self,policy:str) -> str:
+        return f"projects/{self.project}/alertPolicies/{policy}"
     

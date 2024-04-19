@@ -105,6 +105,12 @@ class ComputeManager():
             self.client.set_number_of_instances(ig_name=ig_name,zone=zone,size=0)
         print("Scheduled provision has been turned off.")
 
+    def _switch_alert_policy(self, policy_id:str, is_enable:bool):
+        policy_info = self.client.get_alert_info(policy_id)
+        policy_info.enabled = is_enable
+        response = self.client.update_alert_policy(policy_info)
+        print(f"The Policy '{response.display_name}' enable value has been set to: {is_enable}")
+
     def _validate_parameters(self, ig_name, zone, mig_min,mig_max=3,is_provision=False):
         if not ig_name:
             raise ValueError("Instance group name must be provided")
