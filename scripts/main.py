@@ -7,8 +7,8 @@ from scripts.requests import ProvisionRequest
 project_id = os.getenv('PROJECT',"williamlab")
 mig_name = os.getenv('MIG_NAME',"demo-option2-mig")#"demo-option2-mig"
 mig_zone = os.getenv('MIG_ZONE',"asia-east1-b")#"asia-east1-b"
-mig_min = os.getenv("MIG_MIN",1)
-mig_max = os.getenv("MIG_MAX",3)
+mig_min = int(os.getenv("MIG_MIN",1))
+mig_max = int(os.getenv("MIG_MAX",3))
 scale_in_alert_id = os.getenv("SCALE_IN_ALERT_ID","12249586910524468922")
 
 app = FastAPI()
