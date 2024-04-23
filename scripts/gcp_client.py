@@ -1,13 +1,16 @@
 from google.cloud import compute_v1, monitoring_v3
-from google.protobuf import wrappers_pb2 as wrappers
+from google.protobuf.timestamp_pb2 import Timestamp
+from datetime import datetime, timedelta
+import pytz
 
 class GcpClient():
-    def __init__(self,project_info:str):
+    def __init__(self, project):
         self.auto_scaler_client = compute_v1.AutoscalersClient() # Get Autoscaling info like ON or OFF
         self.ig_client = compute_v1.InstanceGroupsClient() # Get MIG VM Info
         self.ig_manager_client = compute_v1.InstanceGroupManagersClient() # Update MIG Contents
         self.alert_client = monitoring_v3.AlertPolicyServiceClient() #Update Alert policy
-        self.project = project_info
+        self.snooze_client = monitoring_v3.SnoozeServiceClient()
+        self.project = project
 
     def get_autoscaler_info(self,ig_name,zone):
         request = compute_v1.GetAutoscalerRequest(
@@ -112,7 +115,37 @@ class GcpClient():
             print(f"Failed to get alert policy list: {e}")
             return 500
         return response
+    
+    def create_alert_snooze(self,name,policy,interval_min:int):
+        snooze = monitoring_v3.Snooze()
+        snooze.name = f"projects/{self.project}/snoozes/{name}"
+        snooze.display_name = name
+        snooze.criteria = monitoring_v3.Snooze.Criteria(policies=[self._get_policy_name(policy)])
+        # Calculate current time and 5 minutes later in UTC
+        now_utc = datetime.now(tz=pytz.UTC)
+        end_time_utc = now_utc + timedelta(minutes=interval_min)
+        # Set the start and end times for the TimeInterval
+        start_timestamp = Timestamp()
+        end_timestamp = Timestamp()
+        start_timestamp.FromDatetime(now_utc)
+        end_timestamp.FromDatetime(end_time_utc)
 
+        time_interval = monitoring_v3.TimeInterval()
+        time_interval.start_time = start_timestamp
+        time_interval.end_time = end_timestamp
+        snooze.interval = time_interval
+
+        request = monitoring_v3.CreateSnoozeRequest(
+            parent=f"projects/{self.project}",
+            snooze=snooze,
+            )
+        try:
+            response = self.snooze_client.create_snooze(request=request)
+        except Exception as e:
+            print(f"Failed to Create snooze: {name} on policy {policy}")
+            return 500
+        print(f"Created snooze: {response.display_name} on policy {policy}")
+        return response.display_name
+        
     def _get_policy_name(self,policy:str) -> str:
         return f"projects/{self.project}/alertPolicies/{policy}"
-    
