@@ -15,17 +15,18 @@ class ComputeManager():
             print(f"Current Mode is {autoscaler_mode} So Don't Need to Switch")
             return 200
         if autoscaler_mode == "ON":
-            self._snooze_policy("scaler_off_event_snoozing",SnoozeTarget.SCALE_IN,3)
+            self._snooze_policy("scaler_off_event_snoozing",SnoozeTarget.SCALE_IN,self.project_info.SNOOZE_TIME)
             print("Triggered autocaler off event, snooze the scale in policy...")
             #Check if current instances down to minimum
             num_of_instances = self.client.check_instance_number(self.project_info.MIG_NAME,self.project_info.MIG_ZONE)
+            print(f"Current Number of Instances = {num_of_instances}")
             if num_of_instances > autoscaler_info.autoscaling_policy.min_num_replicas:
                 print("Current MIG instance counts is higher than minimum, pass the down to zero process until autoscaler auto-delete instance...")
                 return 200
             self._handle_autoscaler_off(autoscaler_info)
             self._modify_alert_status(event_status.SCALEOUT_ONLY)
         elif autoscaler_mode == "OFF":
-            self._snooze_policy("scaler_on_event_snoozing",SnoozeTarget.SCALE_OUT,3)
+            self._snooze_policy("scaler_on_event_snoozing",SnoozeTarget.SCALE_OUT,self.project_info.SNOOZE_TIME)
             print("Triggered autocaler on event, snooze the scale out policy...")          
             self._handle_autoscaler_on(autoscaler_info)
             self._modify_alert_status(event_status.SCALEIN_ONLY)
@@ -41,7 +42,7 @@ class ComputeManager():
             #Turn off scale-in/out event
             print("Disable ALL alert policy")
             self._modify_alert_status(event_status.DISABLE_ALL)
-            self._snooze_policy("scaler_event_snoozing",SnoozeTarget.ALL,3)
+            self._snooze_policy("scaler_event_snoozing",SnoozeTarget.ALL,self.project_info.SNOOZE_TIME)
             print("Triggered Scheduler provision event, snooze the scale policies...")  
             self._handle_schedule_provision_on(autoscaler_info, provision_count)  
         else:
@@ -68,12 +69,10 @@ class ComputeManager():
 
     def _handle_autoscaler_on(self, autoscaler_info):
         #Get current number of instances in mig (manual setting)
-        #Modify the autoscaler min/max value if the manual setting is bigger.
+        #Modify the autoscaler max value if the manual setting is bigger,
+        #to make sure that the manual setup's vm won't be delete at autoscaler on.
         num_of_instances = self.client.check_instance_number(self.project_info.MIG_NAME,
                                                              self.project_info.MIG_ZONE)
-        autoscaler_info.autoscaling_policy.min_num_replicas = self._find_max(
-            autoscaler_info.autoscaling_policy.min_num_replicas,
-            num_of_instances)
         autoscaler_info.autoscaling_policy.max_num_replicas = self._find_max(
             autoscaler_info.autoscaling_policy.max_num_replicas,
             num_of_instances)
