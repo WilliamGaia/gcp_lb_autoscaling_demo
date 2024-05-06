@@ -58,9 +58,8 @@ class ComputeManager():
     
     def _handle_schedule_provision_on(self, autoscaler_info, provision_count):
         #Turn on autoscaling and set the min/max based on input provision count. 
-        autoscaler_info.autoscaling_policy.min_num_replicas = self._find_max(
-            autoscaler_info.autoscaling_policy.min_num_replicas,
-            provision_count)
+        #TODO Should change to set min if not equal than min.
+        autoscaler_info.autoscaling_policy.min_num_replicas = provision_count
         autoscaler_info.autoscaling_policy.max_num_replicas = self._find_max(
             autoscaler_info.autoscaling_policy.max_num_replicas,
             provision_count)
