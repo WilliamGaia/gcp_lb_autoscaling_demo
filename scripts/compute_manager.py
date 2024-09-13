@@ -126,11 +126,11 @@ class ComputeManager():
     def _snooze_policy(self,name,target,interval:int):
         if target == SnoozeTarget.SCALE_IN or target == SnoozeTarget.ALL:
             self.client.create_alert_snooze(f"{name}",
-                                            policy=self.project_info.SCALE_IN_ALERT_ID,
+                                            policy_id=self.project_info.SCALE_IN_ALERT_ID,
                                             interval_min=interval)
         if target == SnoozeTarget.SCALE_OUT or target == SnoozeTarget.ALL:
             self.client.create_alert_snooze(f"{name}",
-                                            policy=self.project_info.SCALE_OUT_ALERT_ID,
+                                            policy_id=self.project_info.SCALE_OUT_ALERT_ID,
                                             interval_min=interval)
     
     def _validate_parameters(self, is_provision=False):
