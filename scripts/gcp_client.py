@@ -94,7 +94,7 @@ class GcpClient():
     
     def get_alert_info(self, policy_id:str):
         try:
-            response = self.alert_client.get_alert_policy(policy_id)
+            response = self.alert_client.get_alert_policy(name=self._get_policy_name(policy_id))
         except Exception as e:
             print(f"Failed to get alert policy: {e}")
             return 500
@@ -116,11 +116,11 @@ class GcpClient():
             return 500
         return response
     
-    def create_alert_snooze(self,name,policy_id,interval_min:int):
+    def create_alert_snooze(self,name,policy,interval_min:int):
         snooze = monitoring_v3.Snooze()
         snooze.name = f"projects/{self.project}/snoozes/{name}"
         snooze.display_name = name
-        snooze.criteria = monitoring_v3.Snooze.Criteria(policies=[policy_id])
+        snooze.criteria = monitoring_v3.Snooze.Criteria(policies=[self._get_policy_name(policy)])
         # Calculate current time and 5 minutes later in UTC
         now_utc = datetime.now(tz=pytz.UTC)
         end_time_utc = now_utc + timedelta(minutes=interval_min)
@@ -142,7 +142,7 @@ class GcpClient():
         try:
             response = self.snooze_client.create_snooze(request=request)
         except Exception as e:
-            print(f"Failed to Create snooze: {name} on policy {policy_id}")
+            print(f"Failed to Create snooze: {name} on policy {policy}")
             return 500
-        print(f"Created snooze: {response.display_name} on policy {policy_id}")
+        print(f"Created snooze: {response.display_name} on policy {policy}")
         return response.display_name
